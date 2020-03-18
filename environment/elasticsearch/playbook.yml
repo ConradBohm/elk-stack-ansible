@@ -1,0 +1,46 @@
+---
+- name: provision elasticsearch
+  hosts: elasticsearch
+  remote_user: vagrant
+  become_method: sudo
+  become_user: root
+  become: yes
+
+  tasks:
+
+  - name: getting elasticsearch signing key
+    apt_key:
+      url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+      state: present
+
+  - name: adding repo definition to sources list
+    become_user: root
+    shell: echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list
+
+  - name: update repos and install elasticsearch
+    apt:
+      update_cache: yes
+      name: elasticsearch
+      state: latest
+
+  - name: linking config file
+    template:
+      src: elasticsearch.yml
+      dest: /etc/elasticsearch/
+      mode: 0777
+    notify:
+      - restart elasticsearch
+
+  - name: enable and start elasticsearch
+    service:
+      name: elasticsearch
+      enabled: yes
+    service:
+      name: elasticsearch
+      state: started
+
+  handlers:
+  - name: restart elasticsearch
+    service:
+      name: elasticsearch
+      state: restarted
